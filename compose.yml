@@ -1,0 +1,37 @@
+version: '3'
+services:
+  db:
+    image: 'postgres:10.4-alpine'
+    volumes:
+      - '/var/lib/postgresql/data'
+    ports:
+      - '5432:5432'
+    restart: always
+  redis:
+    image: 'redis'
+    restart: always
+    ports:
+      - '6379:6379'
+  app:
+    build:
+      context: .
+      dockerfile: docker/app.Dockerfile
+    image: 'example/rq_app'
+    ports:
+      - '8000:8000'
+    depends_on:
+      - redis
+      - worker
+      - scheduler
+  worker:
+    build:
+      context: .
+      dockerfile: docker/rq.Dockerfile
+    image: 'example/rq_worker'
+    command: 'python manage.py rqworker high default low'
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/rq.Dockerfile
+    image: 'example/rq_scheduler'
+    command: 'python manage.py rqscheduler'
